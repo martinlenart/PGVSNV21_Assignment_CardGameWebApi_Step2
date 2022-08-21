@@ -22,6 +22,8 @@ namespace CardGameWebApi.Controllers
                                           
     public class CardGameController : ControllerBase
     {
+        private ILogger<CardGameController> _logger;
+
         static bool gameStarted = false;
         static string gameTypeRunning = null;
 
@@ -31,6 +33,8 @@ namespace CardGameWebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> StartGame(string gameType)
         {
+            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(StartGame)} executed");
+
             if (gameStarted)
             {
                 return BadRequest($"Game of type {gameTypeRunning} is already running");
@@ -52,6 +56,8 @@ namespace CardGameWebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> EndGame()
         {
+            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(EndGame)} executed");
+
             if (gameStarted)
             {
                 var gtr = gameTypeRunning;
@@ -71,6 +77,8 @@ namespace CardGameWebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DealCard()
         {
+            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(DealCard)} executed");
+
             if (!gameStarted)
                 return BadRequest($"No game is running");
 
@@ -84,6 +92,8 @@ namespace CardGameWebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> DealCards(string nrOfCards)
         {
+            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(DealCards)} executed");
+
             if (!gameStarted)
                 return BadRequest($"No game is running");
 
@@ -112,6 +122,8 @@ namespace CardGameWebApi.Controllers
         [ProducesResponseType(400)]
         public async Task<IActionResult> WinningCard([FromBody] List<PlayingCard> hand)
         {
+            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(WinningCard)} executed");
+
             if (!gameStarted)
                 return BadRequest($"No game is running");
 
@@ -120,6 +132,12 @@ namespace CardGameWebApi.Controllers
 
             //respond with winning card 
             return Ok(hand[0]);
+        }
+
+        public CardGameController(ILogger<CardGameController> logger)
+        {
+            _logger = logger;
+            _logger.LogInformation($"CardGameController started");
         }
     }
 }
