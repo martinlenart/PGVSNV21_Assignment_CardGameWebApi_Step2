@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CardGameWebApi.Models;
+using System.Security.AccessControl;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 //https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
@@ -24,47 +25,36 @@ namespace CardGameWebApi.Controllers
     {
         private ILogger<CardGameController> _logger;
 
-        static bool gameStarted = false;
-        static string gameTypeRunning = null;
+        static GameStatus gameStatus = new GameStatus();
 
         //GET: api/startgame?gametype={gameType}
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(string))]
+        [ProducesResponseType(200, Type = typeof(GameStatus))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> StartGame(string gameType)
         {
             _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(StartGame)} executed");
 
-            if (gameStarted)
+            if (gameStatus.StartGame(gameType.ToLower().Trim()))
             {
-                return BadRequest($"Game of type {gameTypeRunning} is already running");
-            }
-            if (gameType.ToLower().Trim() == "highcard")
-            {
-                gameStarted = true;
-                gameTypeRunning = gameType.ToLower().Trim();
-                return Ok($"Game of type {gameTypeRunning} started");
+                return Ok(gameStatus);
             }
 
-            return BadRequest($"Game of type {gameType} does not exist");
+            return BadRequest($"Game of type {gameStatus.GameType} is already running");
         }
 
         
         //GET: api/endgame
         [HttpGet]
-        [ProducesResponseType(200, Type = typeof(string))]
+        [ProducesResponseType(200, Type = typeof(GameStatus))]
         [ProducesResponseType(400)]
         public async Task<IActionResult> EndGame()
         {
             _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(EndGame)} executed");
 
-            if (gameStarted)
+            if (gameStatus.EndGame())
             {
-                var gtr = gameTypeRunning;
-                gameTypeRunning = null;
-                gameStarted = false;
-
-                return Ok($"Game of type {gtr} ended");
+                return Ok(gameStatus);
             }
 
             return BadRequest($"No game is running");
@@ -79,7 +69,7 @@ namespace CardGameWebApi.Controllers
         {
             _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(DealCard)} executed");
 
-            if (!gameStarted)
+            if (!gameStatus.IsRunning)
                 return BadRequest($"No game is running");
 
             return Ok(PlayingCard.CreateRandom());
@@ -94,7 +84,7 @@ namespace CardGameWebApi.Controllers
         {
             _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(DealCards)} executed");
 
-            if (!gameStarted)
+            if (!gameStatus.IsRunning)
                 return BadRequest($"No game is running");
 
             int _nrOfCards;
@@ -118,20 +108,22 @@ namespace CardGameWebApi.Controllers
         //POST: api/winningcard   
         //Body: List<PlayingCard> in Json
         [HttpPost]                          //Needs to be PUT or POST as I have a request Body
-        [ProducesResponseType(200, Type = typeof(PlayingCard))]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<PlayingCard>))]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> WinningCard([FromBody] List<PlayingCard> hand)
+        public async Task<IActionResult> WinningCards([FromBody] List<PlayingCard> hand)
         {
-            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(WinningCard)} executed");
+            _logger.LogInformation($"Action: {nameof(CardGameController)}.{nameof(WinningCards)} executed");
 
-            if (!gameStarted)
+            if (!gameStatus.IsRunning)
                 return BadRequest($"No game is running");
 
             if (hand.Count <1)
                 return BadRequest($"No cards to evaluate");
 
-            //respond with winning card 
-            return Ok(hand[0]);
+            //respond with winning card as part of a possible winning hand
+            var response = new List<PlayingCard>();
+            response.Add(hand[0]);
+            return Ok(response);
         }
 
         public CardGameController(ILogger<CardGameController> logger)
