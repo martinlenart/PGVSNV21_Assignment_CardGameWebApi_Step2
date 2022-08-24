@@ -11,12 +11,12 @@ using DbAppWebApi.Controllers;
 namespace CardGameWebApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]     //All actions (methods) in the controller will be named Id. They must differentiate in Url
+    [Route("[controller]")]     //All actions (methods) in the controller will be named Id. They must differentiate in Url
     public class IdController : ControllerBase
     {
         private ILogger<LogController> _logger;
 
-        //api/id
+        ///id
         [HttpGet()]
         [ProducesResponseType(200, Type = typeof(IEnumerable<string>))]
         public IEnumerable<string> Id()
